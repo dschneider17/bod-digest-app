@@ -3,6 +3,7 @@ const path = require("path");
 const db = require("./db");
 const config = require("./config");
 const { buildDigestSnapshot } = require("./digest");
+const slack = require("./slack");
 
 db.load();
 
@@ -43,6 +44,15 @@ app.get("/api/snapshots/:id", (req, res) => {
   const found = state.snapshots.find((s) => s.id === req.params.id);
   if (!found) return res.status(404).json({ error: "Not found" });
   res.json({ snapshot: found });
+});
+
+app.delete("/api/snapshots/:id", async (req, res) => {
+  const state = db.getState();
+  const before = state.snapshots.length;
+  state.snapshots = state.snapshots.filter((s) => s.id !== req.params.id);
+  if (state.snapshots.length === before) return res.status(404).json({ error: "Not found" });
+  await db.flush();
+  res.json({ ok: true });
 });
 
 app.get("/api/pull/status", (req, res) => {
@@ -150,6 +160,19 @@ app.post("/api/favorites/:itemId/toggle", async (req, res) => {
   if (state.favorites[id]) delete state.favorites[id]; else state.favorites[id] = true;
   await db.flush();
   res.json({ favorited: !!state.favorites[id] });
+});
+
+// Diagnostic only — shows the last few raw Slack messages from either channel plus what the
+// app computed as their "body" text, so parsing mismatches (e.g. release messages using rich
+// Block Kit formatting) can be debugged without direct Slack API access.
+app.get("/api/debug/channel-sample", async (req, res) => {
+  const which = req.query.channel === "ideas" ? config.PRODUCT_IDEAS_CHANNEL_ID : config.SHIPPING_CHANNEL_ID;
+  try {
+    const messages = await slack.debugRecentMessages(which, 5);
+    res.json({ channel: which, messages });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get("/api/health", (req, res) => {

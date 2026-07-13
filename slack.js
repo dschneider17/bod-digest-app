@@ -51,6 +51,70 @@ function permalinkFor(channelId, ts) {
   return "https://" + config.SLACK_WORKSPACE + ".slack.com/archives/" + channelId + "/p" + ts.replace(".", "");
 }
 
+// Many integration bots (GitHub notifications, etc.) post rich Block Kit messages where the
+// top-level `text` field is just a short fallback ("A new release was published") and the real
+// content lives in `blocks`. This flattens the common block types back into readable text so
+// regexes like parseReleaseVersions() see the same content a human sees in Slack.
+function richTextElementToString(el) {
+  if (!el) return "";
+  if (el.type === "text") return el.text || "";
+  if (el.type === "link") return (el.text && el.text !== el.url) ? (el.text + " (" + el.url + ")") : (el.url || el.text || "");
+  if (el.type === "user") return "@" + (el.user_id || "");
+  if (el.type === "channel") return "#" + (el.channel_id || "");
+  if (el.type === "emoji") return el.name ? (":" + el.name + ":") : "";
+  return el.text || "";
+}
+function richTextBlockToString(block) {
+  const lines = [];
+  (block.elements || []).forEach((section) => {
+    if (section.type === "rich_text_section") {
+      const t = (section.elements || []).map(richTextElementToString).join("");
+      if (t) lines.push(t);
+    } else if (section.type === "rich_text_list") {
+      (section.elements || []).forEach((item) => {
+        const t = (item.elements || []).map(richTextElementToString).join("");
+        lines.push("• " + t);
+      });
+    } else if (section.type === "rich_text_quote" || section.type === "rich_text_preformatted") {
+      const t = (section.elements || []).map(richTextElementToString).join("");
+      if (t) lines.push(t);
+    }
+  });
+  return lines.join("\n");
+}
+function blocksToText(blocks) {
+  const parts = [];
+  (blocks || []).forEach((block) => {
+    if (block.type === "rich_text") {
+      const t = richTextBlockToString(block);
+      if (t) parts.push(t);
+    } else if ((block.type === "section" || block.type === "header") && block.text && block.text.text) {
+      parts.push(block.text.text);
+    } else if (block.type === "context") {
+      const t = (block.elements || []).map((e) => e.text || "").filter(Boolean).join(" ");
+      if (t) parts.push(t);
+    }
+  });
+  return parts.join("\n");
+}
+// Strips common Slack mrkdwn syntax so plain-text regexes (e.g. matching "Release vX deployed!")
+// aren't tripped up by *bold*, <url|label> links, etc.
+function mrkdwnToPlain(text) {
+  if (!text) return "";
+  return text
+    .replace(/<([^|>]+)\|([^>]+)>/g, (_, url, label) => label + " (" + url + ")")
+    .replace(/<([^>|]+)>/g, (_, url) => url)
+    .replace(/(^|\s)[*_~]+(\S)/g, "$1$2")
+    .replace(/(\S)[*_~]+(\s|$)/g, "$1$2");
+}
+// The single source of truth for "what does this message actually say" — prefers block content
+// (richer/more complete for app integrations) and falls back to the plain text field.
+function messageBodyText(msg) {
+  const fromBlocks = mrkdwnToPlain(blocksToText(msg.blocks)).trim();
+  const fromText = mrkdwnToPlain(msg.text || "").trim();
+  return fromBlocks || fromText;
+}
+
 // Fetches every message in [startDate, endDate] from a channel, oldest-first, resolving a
 // display name for each message (bot name for bot messages, real name for humans).
 async function fetchChannelMessagesInWindow(channelId, startDate, endDate) {
@@ -72,7 +136,7 @@ async function fetchChannelMessagesInWindow(channelId, startDate, endDate) {
         ts: msg.ts,
         epochMs: parseFloat(msg.ts) * 1000,
         name,
-        body: (msg.text || "").trim(),
+        body: messageBodyText(msg),
         permalink: permalinkFor(channelId, msg.ts),
         hasThread: !!(msg.reply_count && msg.reply_count > 0)
       });
@@ -87,7 +151,20 @@ async function fetchChannelMessagesInWindow(channelId, startDate, endDate) {
 async function fetchThreadReplyText(channelId, threadTs) {
   const data = await slackRequest("conversations.replies", { channel: channelId, ts: threadTs, limit: 50 });
   const msgs = data.messages || [];
-  return msgs.map((m) => m.text || "").join("\n");
+  return msgs.map((m) => messageBodyText(m)).join("\n");
+}
+
+// Debug helper: returns the last few raw messages from a channel (no date filter) with both the
+// raw text and the computed body, so mismatches in release/idea parsing can be diagnosed without
+// needing direct Slack API access. Hit GET /api/debug/channel-sample?channel=shipping|ideas.
+async function debugRecentMessages(channelId, limit) {
+  const data = await slackRequest("conversations.history", { channel: channelId, limit: limit || 5 });
+  return (data.messages || []).map((m) => ({
+    ts: m.ts,
+    hasBlocks: !!(m.blocks && m.blocks.length),
+    rawText: m.text || "",
+    computedBody: messageBodyText(m)
+  }));
 }
 
 function parseReleaseVersions(body) {
@@ -172,5 +249,6 @@ async function resolveProductIdeaLinearRefs(results) {
 module.exports = {
   fetchReleases,
   fetchProductIdeaMessages,
-  resolveProductIdeaLinearRefs
+  resolveProductIdeaLinearRefs,
+  debugRecentMessages
 };
