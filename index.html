@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Product &amp; Engineering</title>
+<style>
+  :root {
+    color-scheme: light;
+    --navy: #062949;
+    --glacier: #209AE5;
+    --sky: #6DC7FF;
+    --cream-25: #EFEEEC;
+    --cream-50: #EFECE6;
+    --cream-75: #E9E5DD;
+    --cream-100: #E1DCD2;
+
+    --primary: var(--glacier);
+    --primary-dark: var(--navy);
+    --primary-tint: #E3F3FC;
+    --bg: var(--cream-25);
+    --surface: #ffffff;
+    --surface-alt: var(--cream-50);
+    --border: var(--cream-100);
+    --divider: var(--cream-75);
+    --text: var(--navy);
+    --text-muted: #5B7387;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 28px 24px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  .topbar {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px;
+  }
+  .topbar h1 { font-size: 21px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .window-label { font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .controls .status { flex: 1 1 auto; min-width: 0; }
+  .controls button { flex: 0 0 auto; white-space: nowrap; }
+  .pull-panel {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
+  }
+  .pull-panel label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-right: 2px; }
+  .pull-panel input[type=date] { flex: 1 1 0; min-width: 120px; }
+  .pull-panel button.primary { margin-left: auto; flex: 0 0 auto; }
+  #snapshotPickerBtn { padding-top: 8px; padding-bottom: 8px; font-size: 12.5px; }
+  .history-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: #FCEFDB; border: 1px solid #F3D9A4; color: #8A5A00; border-radius: var(--radius-sm);
+    padding: 8px 12px; font-size: 12.5px; margin-bottom: 14px;
+  }
+  .history-banner a, .history-banner button.link { color: #8A5A00; font-weight: 700; text-decoration: underline; background: none; border: none; padding: 0; cursor: pointer; font-size: 12.5px; }
+
+  select, input[type=date], input[type=text], button {
+    font-family: inherit; font-size: 13.5px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    padding: 8px 12px; background: var(--surface); color: var(--text);
+  }
+  select {
+    cursor: pointer; text-align: left; padding-right: 34px;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23209AE5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 15px;
+  }
+  button { cursor: pointer; font-weight: 600; text-align: center; transition: background 0.12s ease; }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  button.primary:hover { background: var(--primary-dark); }
+  button.ghost { background: var(--surface); color: var(--text); }
+  button.ghost:hover { background: var(--primary-tint); }
+  button.small { padding: 6px 10px; font-size: 12.5px; }
+
+  .status {
+    font-size: 12.5px; color: var(--text-muted); min-height: 16px;
+    display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 8px 12px; background: var(--surface); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; min-width: 0; cursor: default;
+  }
+  .status.err { color: #c0362c; border-color: #c0362c; }
+  .spinner { display:inline-block;width:11px;height:11px;border:2px solid var(--primary-tint);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite;margin-right:6px;vertical-align:-1px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  .kpi-row { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .kpi {
+    flex: 1 1 160px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .kpi .num { font-size: 34px; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -0.02em; }
+  .kpi .lbl { font-size: 13px; color: var(--text-muted); margin-top: 6px; font-weight: 500; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+  details.card > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  }
+  details.card > summary::-webkit-details-marker { display: none; }
+  .card .card-content { margin-top: 14px; }
+
+  details.pod-group { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; overflow: hidden; }
+  details.pod-group summary {
+    list-style: none; cursor: pointer; padding: 10px 14px; font-size: 13.5px; font-weight: 700;
+    background: var(--surface-alt); display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  details.pod-group summary::-webkit-details-marker { display: none; }
+  .cnt { font-weight: 500; color: var(--text-muted); font-size: 12.5px; }
+  details.pod-group .pod-body { padding: 6px 14px 10px; }
+  details.pod-group.nested-project { margin: 6px 0; border-color: var(--divider); position: relative; }
+
+  .row-name { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
+  .row-name a { color: var(--text); text-decoration: none; }
+  .row-name a:hover { color: var(--primary); text-decoration: underline; }
+  .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chev { display: inline-block; font-size: 23px; line-height: 1; color: var(--glacier); transition: transform 0.15s ease; }
+  details[open] > summary .chev { transform: rotate(90deg); }
+
+  .pod-update-wrap { padding: 8px 0; }
+  .pod-update-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-muted); margin-bottom: 4px; }
+  .pod-hint { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
+  .project-notes-row { display: flex; gap: 12px; margin-bottom: 10px; padding-top: 10px; flex-wrap: wrap; }
+  .project-notes-col { flex: 1 1 200px; min-width: 0; }
+  .other-notes-wrap { margin-top: 18px; padding-top: 16px; padding-bottom: 0; border-top: 1px solid var(--divider); }
+  .announcement-subsection { margin-bottom: 20px; }
+  .announcement-subsection:last-child { margin-bottom: 0; }
+  .announcement-subsection + .announcement-subsection { padding-top: 18px; border-top: 1px solid var(--divider); }
+  .subsection-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .subsection-header h3 { font-size: 13.5px; font-weight: 700; margin: 0; letter-spacing: -0.005em; }
+
+  textarea.pod-update.callout-field {
+    background: var(--primary-tint); color: #0B4A73; border-color: #BFE3F7;
+  }
+  textarea.pod-update.callout-field::placeholder { color: #5B8CA8; }
+  textarea.pod-update.callout-field:focus { border-color: var(--primary); }
+  textarea.pod-update.blocker-field {
+    background: #FDECEA; color: #A3291F; border-color: #F6C4BE;
+  }
+  textarea.pod-update.blocker-field::placeholder { color: #C07871; }
+  textarea.pod-update.blocker-field:focus { border-color: #C0362C; }
+
+  details.slack-entry.callout-entry .release-body { background: var(--primary-tint); color: #0B4A73; }
+  details.slack-entry.blocker-entry .release-body { background: #FDECEA; color: #A3291F; }
+
+  details.nested-project.favorited { border-color: #EAD37A; }
+  details.nested-project.favorited > summary { background: #FFF6D8; }
+  .note-title-input {
+    font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--text); border: none; background: transparent;
+    padding: 0; width: 100%; min-width: 0;
+  }
+  .note-title-input:focus { outline: none; }
+  .note-title-input::placeholder { color: #9aabb8; font-weight: 500; }
+  details.note-entry .release-body[contenteditable="true"]:empty:before { content: attr(data-placeholder); color: #9aabb8; }
+  textarea.pod-update {
+    width: 100%; min-height: 56px; resize: none; overflow-y: hidden; font-family: inherit; font-size: 13.5px; color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; background: var(--surface);
+  }
+  textarea.pod-update:focus { outline: none; border-color: var(--primary); }
+  textarea.pod-update::placeholder { color: #9aabb8; }
+
+  details.slack-entry .release-body-wrap { padding: 10px 14px 12px; }
+  details.slack-entry .release-body {
+    white-space: pre-wrap; font-size: 12.5px; line-height: 1.55; color: var(--text);
+    background: var(--surface-alt); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+  }
+  details.slack-entry .release-body[contenteditable="true"] { cursor: text; }
+  details.slack-entry .release-body:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .badge-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .icon-link { display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted); text-decoration: none; }
+  .icon-link:hover { color: var(--glacier); }
+  .fav-btn { background: none; border: none; padding: 0; margin: 0; }
+  .fav-btn:hover { color: #F5A623; }
+  .fav-btn.active { color: #F5A623; }
+  .ref-chip {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 8px;
+    border: 1px solid var(--divider); border-radius: 8px; background: var(--surface); text-decoration: none; color: var(--text);
+  }
+  .ref-chip:last-child { margin-bottom: 0; }
+  .ref-chip:hover { border-color: var(--glacier); }
+  .ref-chip .ref-icon { flex-shrink: 0; display: inline-flex; color: var(--text-muted); }
+  .ref-chip:hover .ref-icon { color: var(--glacier); }
+  .ref-chip .ref-name { font-weight: 700; font-size: 12.5px; flex-shrink: 0; }
+  .ref-chip .ref-title {
+    font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; flex: 1 1 auto; min-width: 0;
+  }
+  .ref-chip .tag { flex-shrink: 0; margin: 0; }
+  .idea-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .idea-filter-bar[hidden] { display: none; }
+  .idea-filter-bar .idea-filter-label { font-size: 12.5px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+  .idea-filter-bar select { flex: 0 1 220px; padding: 6px 30px 6px 10px; font-size: 12.5px; }
+  .filter-toggle-btn { background: none; border: none; padding: 2px; margin: 0; }
+  .filter-toggle-btn.active { color: var(--glacier); }
+
+  .multi-select { position: relative; flex: 0 1 220px; }
+  .multi-select-btn {
+    font-family: inherit; font-size: 12.5px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    padding: 6px 30px 6px 10px; background: var(--surface); color: var(--text); cursor: pointer; text-align: left;
+    width: 100%; min-width: 150px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23209AE5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
+  }
+  .multi-select-panel {
+    position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; min-width: 220px; max-height: 260px; overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(6,41,73,0.14); padding: 6px;
+  }
+  .multi-select-panel[hidden] { display: none; }
+  .multi-select-option { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .multi-select-option:hover { background: var(--surface-alt); }
+  .multi-select-option input { margin: 0; }
+  .triage-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .triage-summary + .item { border-top: none; }
+  .triage-stat-box {
+    flex: 1 1 130px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .triage-stat-box .num { font-size: 22px; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -0.01em; }
+  .triage-stat-box .lbl { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+  .item {
+    display: flex; gap: 10px; align-items: flex-start; padding: 8px 0;
+    border-top: 1px solid var(--divider);
+  }
+  .item:first-child { border-top: none; }
+  .item .content { flex: 1; min-width: 0; }
+  .item .content .line1 { font-size: 13.5px; font-weight: 600; }
+  .item .content .line1 a { color: var(--text); text-decoration: none; }
+  .item .content .line1 a:hover { color: var(--primary); text-decoration: underline; }
+  .item .content .meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .tag { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .03em; padding: 2px 7px; border-radius: 5px; background: var(--cream-75); color: var(--text-muted); margin-right: 6px; }
+  .tag.eng { background: var(--primary-tint); color: var(--navy); }
+  .tag.prod { background: #E4F3E9; color: #157A46; }
+  .tag.completed { background: #E4F3E9; color: #157A46; }
+  .tag.progress { background: #FCEFDB; color: #8A5A00; }
+  .tag.todo { background: var(--cream-75); color: var(--text-muted); }
+
+  .empty { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 6px 0; }
+  .config-warning {
+    background: #FDECEA; border: 1px solid #F6C4BE; color: #A3291F; border-radius: var(--radius-sm);
+    padding: 12px 16px; margin-bottom: 18px; font-size: 13px;
+  }
+  footer.hint { font-size: 12px; color: var(--text-muted); text-align: center; margin: 18px 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>Product &amp; Engineering</h1>
+    <span class="window-label" id="windowLabel"></span>
+  </div>
+
+  <div id="configWarning"></div>
+
+  <div class="controls">
+    <span class="status" id="statusLine"></span>
+    <div class="multi-select" id="snapshotPickerWrap" style="flex:0 1 320px;">
+      <button type="button" class="multi-select-btn" id="snapshotPickerBtn">No pulls yet</button>
+      <div class="multi-select-panel" id="snapshotPickerPanel" hidden></div>
+    </div>
+  </div>
+  <div class="pull-panel">
+    <input type="date" id="pullStart" />
+    <span>–</span>
+    <input type="date" id="pullEnd" />
+    <button type="button" class="primary" id="pullBtn">Create new</button>
+  </div>
+  <div id="historyBanner"></div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="num" id="kpiReleases">–</div><div class="lbl">Releases</div></div>
+    <div class="kpi"><div class="num" id="kpiCompleted">–</div><div class="lbl">Completed tickets</div></div>
+    <div class="kpi"><div class="num" id="kpiIdeas">–</div><div class="lbl">Product ideas</div></div>
+    <div class="kpi"><div class="num" id="kpiTriage">–</div><div class="lbl">Triage tickets</div></div>
+  </div>
+
+  <details class="card">
+    <summary><h2>Pods</h2><span class="row-right"><span class="chev">▸</span></span></summary>
+    <div class="card-content">
+      <p class="pod-hint">Callouts, blockers, and notes here save to this app's database for everyone — no Slack, no per-device state.</p>
+      <div id="podsOverview"></div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><h2>Announcements</h2><span class="row-right"><span class="chev">▸</span></span></summary>
+    <div class="card-content">
+      <div class="announcement-subsection">
+        <div class="subsection-header">
+          <h3>Callouts</h3>
+          <button type="button" class="ghost small" id="addCalloutBtn">+ Add callout</button>
+        </div>
+        <div id="calloutsTopList"></div>
+      </div>
+      <div class="announcement-subsection">
+        <div class="subsection-header">
+          <h3>Blockers</h3>
+          <button type="button" class="ghost small" id="addBlockerBtn">+ Add blocker</button>
+        </div>
+        <div id="blockersTopList"></div>
+      </div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><h2>Releases</h2><span class="row-right"><span class="cnt" id="releasesCardCnt"></span><span class="chev">▸</span></span></summary>
+    <div class="card-content" id="releasesList"></div>
+  </details>
+
+  <details class="card">
+    <summary><h2>Product Ideas</h2><span class="row-right">
+      <button type="button" class="icon-link filter-toggle-btn" id="ideaFilterToggle" title="Filter by person"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 12 14 19 10 21 10 12 4 4"/></svg></button>
+      <span class="cnt" id="productIdeasCardCnt"></span><span class="chev">▸</span>
+    </span></summary>
+    <div class="card-content">
+      <div class="idea-filter-bar" id="ideaFilterBar" hidden>
+        <span class="idea-filter-label">Filter by person</span>
+        <select id="ideaPersonFilter"></select>
+      </div>
+      <div id="productIdeasList"></div>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary><h2>Triage</h2><span class="row-right">
+      <button type="button" class="icon-link filter-toggle-btn" id="triageFilterToggle" title="Filter by person"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 12 14 19 10 21 10 12 4 4"/></svg></button>
+      <span class="cnt" id="triageCardCnt"></span><span class="chev">▸</span>
+    </span></summary>
+    <div class="card-content">
+      <div class="idea-filter-bar" id="triageFilterBar" hidden>
+        <span class="idea-filter-label">Filter by person</span>
+        <div class="multi-select" id="triagePersonFilterWrap">
+          <button type="button" class="multi-select-btn" id="triagePersonFilterBtn">All people</button>
+          <div class="multi-select-panel" id="triagePersonFilterPanel" hidden></div>
+        </div>
+      </div>
+      <div id="triageList"></div>
+    </div>
+  </details>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var POD_FOUR = ["Alpha", "Beta", "Gamma", "Intern"];
+  var UI_STATE_KEY = "bodDigestUiState_v1";
+  var TRIAGE_NONE_VALUE = "__none__";
+
+  // ---------- local (per-browser, non-shared) UI state ----------
+  // Hidden projects, edited-in-place Slack copy, and open filter panels are just personal
+  // decluttering preferences, not shared team data, so they stay in this browser only.
+  function loadUiState(){
+    try {
+      var raw = localStorage.getItem(UI_STATE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return {};
+  }
+  var uiState = Object.assign({ hiddenProjectIds: [], slackEdits: {}, productIdeaFilter: { open: false, person: null }, triageFilter: { open: false, people: [] } }, loadUiState());
+  if (!Array.isArray(uiState.triageFilter.people)) uiState.triageFilter.people = [];
+  function saveUiState(){ localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState)); }
+
+  // ---------- shared server state ----------
+  var snapshot = null;        // { id, createdAt, label, windowStart, windowEnd, data, podsOverview }
+  var snapshotList = [];      // lightweight index of all past pulls
+  var viewingLatest = true;
+  var sharedNotes = { calloutsTop: [], blockersTop: [], podOtherNotes: {}, projectCallouts: {}, projectBlockers: {} };
+  var favorites = {};
+
+  function currentData(){ return (snapshot && snapshot.data) || blankData(); }
+  function blankData(){ return { lastRefreshed: null, windowStart: null, windowEnd: null, releaseItems: [], releaseCount: 0, completedCount: 0, triageItems: [], triageThemes: null, productIdeaItems: [] }; }
+
+  function isFavorite(id){ return !!favorites[id]; }
+  async function toggleFavorite(id, rerender){
+    try {
+      var res = await fetch("/api/favorites/" + encodeURIComponent(id) + "/toggle", { method: "POST" });
+      var json = await res.json();
+      if (json.favorited) favorites[id] = true; else delete favorites[id];
+    } catch(e){ console.error("Failed to toggle favorite", e); }
+    if (rerender) rerender();
+  }
+  function starIconSvg(filled){
+    if (filled) return '<svg viewBox="0 0 24 24" width="14" height="14" fill="#F5A623" stroke="#F5A623" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+    return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  }
+  function favButton(id, rerender){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "icon-link fav-btn" + (isFavorite(id) ? " active" : "");
+    b.title = isFavorite(id) ? "Remove favorite" : "Add favorite";
+    b.innerHTML = starIconSvg(isFavorite(id));
+    b.addEventListener("click", function(ev){ ev.preventDefault(); ev.stopPropagation(); toggleFavorite(id, rerender); });
+    return b;
+  }
+  function favSort(items, idFn){
+    return items.slice().sort(function(a, b){ return (isFavorite(idFn(b)) ? 1 : 0) - (isFavorite(idFn(a)) ? 1 : 0); });
+  }
+
+  // ---------- fetch helpers ----------
+  function getJson(url){ return fetch(url).then(function(r){ return r.json(); }); }
+  function putJson(url, body){ return fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }); }
+  function postJson(url, body){ return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }).then(function(r){ return r.json(); }); }
+  function delJson(url){ return fetch(url, { method: "DELETE" }).then(function(r){ return r.json(); }); }
+
+  // ---------- rendering helpers ----------
+  function setStatus(html, isErr, fullText){
+    var e = document.getElementById("statusLine");
+    e.innerHTML = html;
+    e.className = "status" + (isErr ? " err" : "");
+    var plain = fullText != null ? fullText : (e.textContent || "").trim();
+    if (plain) e.title = plain; else e.removeAttribute("title");
+  }
+  function el(tag, cls, html){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+  function statusTagClass(statusType){
+    if (statusType === "completed") return "completed";
+    if (statusType === "started" || statusType === "triage") return "progress";
+    return "todo";
+  }
+  var NAME_COLORS = [
+    { bg: "#E3F3FC", fg: "#0B4A73" }, { bg: "#FCEFDB", fg: "#8A5A00" }, { bg: "#E4F3E9", fg: "#157A46" },
+    { bg: "#F3E8FB", fg: "#6B2FA0" }, { bg: "#FBE8EC", fg: "#A02B4A" }, { bg: "#E9E5DD", fg: "#45586B" },
+    { bg: "#DDEFFB", fg: "#1B5E8C" }, { bg: "#FDEBD8", fg: "#9A4B12" }
+  ];
+  function colorForName(name){
+    var s = String(name || ""); var hash = 0;
+    for (var i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+    return NAME_COLORS[hash % NAME_COLORS.length];
+  }
+  function nameTag(name){
+    if (!name) return "";
+    var c = colorForName(name);
+    return "<span class=\"tag\" style=\"background:" + c.bg + ";color:" + c.fg + ";\">" + escapeHtml(name) + "</span>";
+  }
+  function firstLineSummary(body, maxLen){
+    var line = ((body || "").split("\n")[0] || "").trim();
+    if (!line) line = (body || "").trim();
+    if (line.length > maxLen) line = line.slice(0, maxLen - 1) + "…";
+    return line || "(no text)";
+  }
+  function formatRelativeTime(iso){
+    if (!iso) return "";
+    var diffMs = Date.now() - new Date(iso).getTime();
+    var minutes = Math.round(diffMs / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return minutes + "m ago";
+    var hours = Math.round(minutes / 60);
+    if (hours < 24) return hours + "h ago";
+    var days = Math.round(hours / 24);
+    return days + "d ago";
+  }
+  function ordinalSuffix(n){
+    if (n >= 11 && n <= 13) return "th";
+    switch (n % 10){ case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; }
+  }
+  function formatPrettyDate(isoDate){
+    var d = new Date(isoDate + "T00:00:00");
+    var month = d.toLocaleDateString("en-US", { month: "long" });
+    var day = d.getDate();
+    return month + " " + day + ordinalSuffix(day) + ", " + d.getFullYear();
+  }
+  function updateWindowLabel(p){
+    var lbl = document.getElementById("windowLabel");
+    if (!p || !p.windowStart || !p.windowEnd){ lbl.textContent = ""; return; }
+    lbl.textContent = formatPrettyDate(p.windowStart) + " – " + formatPrettyDate(p.windowEnd);
+  }
+  function renderEmptyContainer(id, text){
+    var c = document.getElementById(id);
+    if (!c) return;
+    c.innerHTML = "";
+    c.appendChild(el("div", "empty", text));
+  }
+
+  function linearIconCounterFn(){ var n = 0; return function(){ n++; return n; }; }
+  var linearIconCounter = linearIconCounterFn();
+  function linearIconSvg(){
+    var maskId = "linearIconMask" + linearIconCounter();
+    return '<svg width="14" height="14" viewBox="0 0 322 322" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="161" cy="161" r="161" fill="black"/>' +
+      '<mask id="' + maskId + '" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="322" height="322">' +
+      '<circle cx="161" cy="161" r="161" fill="white"/>' +
+      '</mask>' +
+      '<g mask="url(#' + maskId + ')">' +
+      '<rect x="14" y="62.8647" width="22.4361" height="346.483" transform="rotate(-45 14 62.8647)" fill="white"/>' +
+      '<rect x="-22" y="92.8647" width="22.4361" height="346.483" transform="rotate(-45 -22 92.8647)" fill="white"/>' +
+      '<rect x="-58" y="122.865" width="22.4361" height="346.483" transform="rotate(-45 -58 122.865)" fill="white"/>' +
+      '</g></svg>';
+  }
+  function slackIconSvg(){
+    return '<svg viewBox="0 0 122.8 122.8" width="14" height="14" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zM32.3 77.6c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="#E01E5A"/>' +
+      '<path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zM45.2 32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="#36C5F0"/>' +
+      '<path d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2zM90.5 45.2c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z" fill="#2EB67D"/>' +
+      '<path d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9zM77.6 90.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z" fill="#ECB22E"/>' +
+      '</svg>';
+  }
+
+  function renderItemRow(item){
+    var row = el("div", "item");
+    var content = el("div", "content");
+    var line1 = el("div", "line1");
+    if (item.tagTeam) line1.innerHTML = '<span class="tag ' + (item.tagTeam === "Engineering" ? "eng" : "prod") + '">' + item.tagTeam + '</span>';
+    if (item.url){
+      var a = document.createElement("a"); a.href = item.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = item.text || "";
+      line1.appendChild(a);
+    } else {
+      line1.appendChild(document.createTextNode(item.text || ""));
+    }
+    content.appendChild(line1);
+    if (item.meta) content.appendChild(el("div", "meta", escapeHtml(item.meta)));
+    row.appendChild(content);
+    return row;
+  }
+
+  function countWorkdays(start, end){
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    var endD = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    var count = 0;
+    while (d.getTime() <= endD.getTime()){
+      var day = d.getDay();
+      if (day !== 0 && day !== 6) count++;
+      d.setDate(d.getDate() + 1);
+    }
+    return Math.max(1, count);
+  }
+  function renderTriageSummary(container, items, period){
+    if (!period.windowStart || !period.windowEnd) return;
+    var workdays = countWorkdays(new Date(period.windowStart + "T00:00:00"), new Date(period.windowEnd + "T23:59:59"));
+    var avg = items.length / workdays;
+    var summary = el("div", "triage-summary");
+    summary.appendChild(el("div", "triage-stat-box", "<div class=\"num\">" + avg.toFixed(1) + "</div><div class=\"lbl\">Tickets/Day</div>"));
+    if (period.triageThemes && period.triageThemes.length){
+      period.triageThemes.forEach(function(t){
+        summary.appendChild(el("div", "triage-stat-box", "<div class=\"num\">" + t.count + "</div><div class=\"lbl\">" + escapeHtml(t.name) + "</div>"));
+      });
+    }
+    container.appendChild(summary);
+  }
+  function renderTriage(containerId, items, period, displayItems, emptyFilterText){
+    var container = document.getElementById(containerId);
+    container.innerHTML = "";
+    if (!items || !items.length){ container.appendChild(el("div", "empty", "Nothing here for this period.")); return; }
+    renderTriageSummary(container, items, period);
+    var rows = displayItems || items;
+    if (!rows.length){ container.appendChild(el("div", "empty", emptyFilterText || "Nothing here for this period.")); return; }
+    rows.forEach(function(it){
+      var row = el("div", "item");
+      var content = el("div", "content");
+      var line1 = el("div", "line1");
+      var a = document.createElement("a"); a.href = it.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = it.text || "";
+      line1.appendChild(a);
+      content.appendChild(line1);
+      var dateBadge = it.createdAt ? new Date(it.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+      content.appendChild(el("div", "badge-row",
+        "<span class=\"tag " + statusTagClass(it.statusType) + "\">" + escapeHtml(it.status || "") + "</span>" +
+        nameTag(it.assignee) +
+        (dateBadge ? "<span class=\"tag\">" + escapeHtml(dateBadge) + "</span>" : "")
+      ));
+      row.appendChild(content);
+      container.appendChild(row);
+    });
+  }
+  function multiSelectLabel(val){ return val === TRIAGE_NONE_VALUE ? "No assignee" : val; }
+  function renderMultiSelectPanel(panelId, options, selected, labelFn, onChange){
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    panel.innerHTML = "";
+    if (!options.length){ panel.appendChild(el("div", "empty", "No options.")); return; }
+    options.forEach(function(opt){
+      var row = document.createElement("label");
+      row.className = "multi-select-option";
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = selected.indexOf(opt) !== -1;
+      cb.addEventListener("change", function(){
+        var next = selected.slice();
+        var idx = next.indexOf(opt);
+        if (cb.checked){ if (idx === -1) next.push(opt); }
+        else if (idx !== -1) { next.splice(idx, 1); }
+        onChange(next);
+      });
+      row.appendChild(cb);
+      row.appendChild(document.createTextNode(labelFn(opt)));
+      panel.appendChild(row);
+    });
+  }
+  function updateMultiSelectButtonLabel(btnId, selected, labelFn){
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (!selected.length) btn.textContent = "All people";
+    else if (selected.length === 1) btn.textContent = labelFn(selected[0]);
+    else btn.textContent = selected.length + " selected";
+  }
+  function renderTriageSection(){
+    var p = currentData();
+    var items = p.triageItems || [];
+    var filterBar = document.getElementById("triageFilterBar");
+    var toggleBtn = document.getElementById("triageFilterToggle");
+    if (filterBar) filterBar.hidden = !uiState.triageFilter.open;
+    if (toggleBtn) toggleBtn.classList.toggle("active", !!(uiState.triageFilter.people && uiState.triageFilter.people.length));
+
+    var people = []; var seen = {}; var hasUnassigned = false;
+    items.forEach(function(it){
+      if (it.assignee){ if (!seen[it.assignee]){ seen[it.assignee] = true; people.push(it.assignee); } }
+      else { hasUnassigned = true; }
+    });
+    people.sort();
+    var options = people.slice();
+    if (hasUnassigned) options.push(TRIAGE_NONE_VALUE);
+    uiState.triageFilter.people = uiState.triageFilter.people.filter(function(v){ return options.indexOf(v) !== -1; });
+
+    renderMultiSelectPanel("triagePersonFilterPanel", options, uiState.triageFilter.people, multiSelectLabel, function(next){
+      uiState.triageFilter.people = next; saveUiState(); renderTriageSection();
+    });
+    updateMultiSelectButtonLabel("triagePersonFilterBtn", uiState.triageFilter.people, multiSelectLabel);
+
+    var selected = uiState.triageFilter.people;
+    var filtered = selected.length ? items.filter(function(it){ return selected.indexOf(it.assignee || TRIAGE_NONE_VALUE) !== -1; }) : items;
+    var emptyFilterText = selected.length ? "No triage tickets match the selected filter." : null;
+    renderTriage("triageList", items, p, filtered, emptyFilterText);
+    document.getElementById("triageCardCnt").textContent = filtered.length + (selected.length ? " of " + items.length : "") + " ticket(s)";
+  }
+
+  var slackEditSaveTimers = {};
+  function saveSlackEditDebounced(id, text){
+    uiState.slackEdits[id] = text;
+    clearTimeout(slackEditSaveTimers[id]);
+    slackEditSaveTimers[id] = setTimeout(function(){ saveUiState(); }, 400);
+  }
+
+  function getOpenIds(container){
+    var set = {};
+    if (!container) return set;
+    container.querySelectorAll("details[open]").forEach(function(d){ if (d.dataset && d.dataset.id) set[d.dataset.id] = true; });
+    return set;
+  }
+  function renderSlackEntries(containerId, items, emptyText, opts){
+    opts = opts || {};
+    var container = document.getElementById(containerId);
+    var openIds = getOpenIds(container);
+    container.innerHTML = "";
+    if (!items || !items.length){ container.appendChild(el("div", "empty", emptyText)); return; }
+    function rerenderSelf(){ renderSlackEntries(containerId, items, emptyText, opts); }
+    var sorted = favSort(items, function(it){ return it.id; });
+    sorted.forEach(function(it){
+      var d = el("details", "pod-group slack-entry");
+      d.dataset.id = it.id;
+      if (openIds[it.id]) d.open = true;
+      var rightHtml = "<span class=\"tag\">" + escapeHtml(it.meta || "") + "</span>";
+      if (opts.showSubmitterInCollapsed && it.submitter) rightHtml += nameTag(it.submitter);
+      var titleHtml = (opts.linkTitleToSlack && it.url)
+        ? "<a href=\"" + escapeHtml(it.url) + "\" target=\"_blank\" rel=\"noopener\">" + escapeHtml(it.text || "") + "</a>"
+        : escapeHtml(it.text || "");
+      var summary = el("summary", null, "<span class=\"row-name\">" + titleHtml + "</span>");
+      var rightWrap = el("span", "row-right", rightHtml);
+      if (it.linearIssue){
+        var linearIconA = document.createElement("a");
+        linearIconA.href = it.linearIssue.url; linearIconA.target = "_blank"; linearIconA.rel = "noopener";
+        linearIconA.className = "icon-link"; linearIconA.title = "Linear: " + (it.linearRef || it.linearIssue.title || "");
+        linearIconA.innerHTML = linearIconSvg();
+        linearIconA.addEventListener("click", function(ev){ ev.stopPropagation(); });
+        rightWrap.insertBefore(linearIconA, rightWrap.firstChild);
+      } else if (!opts.noFavorite){
+        rightWrap.insertBefore(favButton(it.id, rerenderSelf), rightWrap.firstChild);
+      }
+      rightWrap.appendChild(el("span", "chev", "▸"));
+      summary.appendChild(rightWrap);
+      d.appendChild(summary);
+      if (opts.linkTitleToSlack){
+        var titleA = summary.querySelector(".row-name a");
+        if (titleA) titleA.addEventListener("click", function(ev){ ev.stopPropagation(); });
+      }
+
+      var wrap = el("div", "release-body-wrap");
+      var bodyText = uiState.slackEdits.hasOwnProperty(it.id) ? uiState.slackEdits[it.id] : (it.body || "");
+      var bodyEl = el("div", "release-body", escapeHtml(bodyText).replace(/\n/g, "<br>"));
+      bodyEl.contentEditable = "true";
+      bodyEl.spellcheck = false;
+      bodyEl.addEventListener("input", function(){ saveSlackEditDebounced(it.id, bodyEl.innerText); });
+      wrap.appendChild(bodyEl);
+
+      if (it.url && !opts.linkTitleToSlack){
+        var slackChip = document.createElement("a");
+        slackChip.className = "ref-chip"; slackChip.href = it.url; slackChip.target = "_blank"; slackChip.rel = "noopener";
+        slackChip.innerHTML =
+          "<span class=\"ref-icon\">" + slackIconSvg() + "</span>" +
+          "<span class=\"ref-name\">Slack</span>" +
+          "<span class=\"ref-title\">" + escapeHtml(firstLineSummary(it.body || "", 70)) + "</span>";
+        wrap.appendChild(slackChip);
+      }
+      if (it.linearIssue){
+        var li = it.linearIssue;
+        var linearChip = document.createElement("a");
+        linearChip.className = "ref-chip"; linearChip.href = li.url; linearChip.target = "_blank"; linearChip.rel = "noopener";
+        linearChip.innerHTML =
+          "<span class=\"ref-icon\">" + linearIconSvg() + "</span>" +
+          "<span class=\"ref-name\">" + escapeHtml(it.linearRef || "") + "</span>" +
+          "<span class=\"ref-title\">" + escapeHtml(firstLineSummary(li.title || "", 60)) + "</span>" +
+          "<span class=\"tag " + statusTagClass(li.statusType) + "\">" + escapeHtml(li.status || "") + "</span>";
+        wrap.appendChild(linearChip);
+      }
+      d.appendChild(wrap);
+      container.appendChild(d);
+    });
+  }
+
+  function renderProductIdeas(){
+    var p = currentData();
+    var items = p.productIdeaItems || [];
+    var filterBar = document.getElementById("ideaFilterBar");
+    var toggleBtn = document.getElementById("ideaFilterToggle");
+    if (filterBar) filterBar.hidden = !uiState.productIdeaFilter.open;
+    if (toggleBtn) toggleBtn.classList.toggle("active", !!uiState.productIdeaFilter.person);
+
+    var people = []; var seen = {};
+    items.forEach(function(it){ if (it.submitter && !seen[it.submitter]){ seen[it.submitter] = true; people.push(it.submitter); } });
+    people.sort();
+
+    var sel = document.getElementById("ideaPersonFilter");
+    if (sel){
+      var prevValue = uiState.productIdeaFilter.person || "";
+      if (prevValue && people.indexOf(prevValue) === -1){ uiState.productIdeaFilter.person = null; prevValue = ""; }
+      sel.innerHTML = "";
+      var allOpt = document.createElement("option"); allOpt.value = ""; allOpt.textContent = "All people";
+      sel.appendChild(allOpt);
+      people.forEach(function(name){ var opt = document.createElement("option"); opt.value = name; opt.textContent = name; sel.appendChild(opt); });
+      sel.value = prevValue;
+    }
+    var activePerson = uiState.productIdeaFilter.person;
+    var filtered = activePerson ? items.filter(function(it){ return it.submitter === activePerson; }) : items;
+    var emptyText = activePerson ? "No ideas from " + activePerson + " in this period." : "No ideas posted in this period.";
+    renderSlackEntries("productIdeasList", filtered, emptyText, { showSubmitterInCollapsed: true, noFavorite: true });
+    document.getElementById("productIdeasCardCnt").textContent = filtered.length + (activePerson ? " of " + items.length : "") + " idea(s)";
+  }
+
+  function hideProject(projectId){
+    if (uiState.hiddenProjectIds.indexOf(projectId) === -1) uiState.hiddenProjectIds.push(projectId);
+    saveUiState();
+    renderPodsOverview();
+  }
+  function autoGrowTextarea(ta){ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+
+  // ---------- shared notes: Callouts / Blockers (top-level) ----------
+  function newNoteId(){ return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  var topNoteSaveTimers = {};
+  function scheduleSaveTopNote(kind, id){
+    clearTimeout(topNoteSaveTimers[id]);
+    topNoteSaveTimers[id] = setTimeout(function(){
+      var list = kind === "callouts" ? sharedNotes.calloutsTop : sharedNotes.blockersTop;
+      var note = list.find(function(n){ return n.id === id; });
+      if (!note) return;
+      putJson("/api/notes/top/" + kind + "/" + id, { title: note.title, body: note.body }).catch(function(e){ console.error(e); });
+    }, 500);
+  }
+  async function addTopNote(kind){
+    try {
+      var res = await postJson("/api/notes/top/" + kind, {});
+      var list = kind === "callouts" ? sharedNotes.calloutsTop : sharedNotes.blockersTop;
+      list.unshift(res.note);
+      if (kind === "callouts") renderCalloutsTop(); else renderBlockersTop();
+    } catch(e){ console.error("Failed to add note", e); }
+  }
+  async function deleteTopNote(kind, id){
+    if (!window.confirm("Delete this " + (kind === "callouts" ? "callout" : "blocker") + "?")) return;
+    var list = kind === "callouts" ? sharedNotes.calloutsTop : sharedNotes.blockersTop;
+    var idx = list.findIndex(function(n){ return n.id === id; });
+    if (idx !== -1) list.splice(idx, 1);
+    if (kind === "callouts") renderCalloutsTop(); else renderBlockersTop();
+    try { await delJson("/api/notes/top/" + kind + "/" + id); } catch(e){ console.error("Failed to delete note", e); }
+  }
+  function renderTopNotesList(kind){
+    var containerId = kind === "callouts" ? "calloutsTopList" : "blockersTopList";
+    var list = kind === "callouts" ? sharedNotes.calloutsTop : sharedNotes.blockersTop;
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var openIds = getOpenIds(container);
+    container.innerHTML = "";
+    if (!list.length){ container.appendChild(el("div", "empty", "No " + kind + " yet.")); return; }
+    list.forEach(function(note){
+      var d = document.createElement("details");
+      d.className = "pod-group slack-entry note-entry" + (kind === "callouts" ? " callout-entry" : " blocker-entry");
+      d.dataset.id = note.id;
+      d.open = openIds[note.id] || (!note.title && !note.body);
+      var summary = document.createElement("summary");
+      var nameSpan = el("span", "row-name");
+      var titleInput = document.createElement("input");
+      titleInput.type = "text";
+      titleInput.className = "note-title-input";
+      titleInput.placeholder = "Untitled " + (kind === "callouts" ? "callout" : "blocker");
+      titleInput.value = note.title || "";
+      titleInput.addEventListener("click", function(ev){ ev.stopPropagation(); });
+      titleInput.addEventListener("input", function(){ note.title = titleInput.value; scheduleSaveTopNote(kind, note.id); });
+      nameSpan.appendChild(titleInput);
+      summary.appendChild(nameSpan);
+      var rightWrap = el("span", "row-right");
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "icon-link";
+      delBtn.title = "Delete";
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+      delBtn.addEventListener("click", function(ev){ ev.preventDefault(); ev.stopPropagation(); deleteTopNote(kind, note.id); });
+      rightWrap.appendChild(delBtn);
+      rightWrap.appendChild(el("span", "chev", "▸"));
+      summary.appendChild(rightWrap);
+      d.appendChild(summary);
+      var wrap = el("div", "release-body-wrap");
+      var bodyEl = el("div", "release-body", escapeHtml(note.body || "").replace(/\n/g, "<br>"));
+      bodyEl.contentEditable = "true";
+      bodyEl.spellcheck = false;
+      bodyEl.dataset.placeholder = "Add details…";
+      bodyEl.addEventListener("input", function(){ note.body = bodyEl.innerText; scheduleSaveTopNote(kind, note.id); });
+      wrap.appendChild(bodyEl);
+      d.appendChild(wrap);
+      container.appendChild(d);
+    });
+  }
+  function renderCalloutsTop(){ renderTopNotesList("callouts"); }
+  function renderBlockersTop(){ renderTopNotesList("blockers"); }
+
+  // ---------- pod-level / project-level notes ----------
+  var podNoteSaveTimers = {};
+  function scheduleSavePodNote(podName){
+    clearTimeout(podNoteSaveTimers[podName]);
+    podNoteSaveTimers[podName] = setTimeout(function(){
+      putJson("/api/notes/pod/" + encodeURIComponent(podName), { text: sharedNotes.podOtherNotes[podName] || "" }).catch(function(e){ console.error(e); });
+    }, 500);
+  }
+  var projectNoteSaveTimers = {};
+  function scheduleSaveProjectNote(projectId){
+    clearTimeout(projectNoteSaveTimers[projectId]);
+    projectNoteSaveTimers[projectId] = setTimeout(function(){
+      putJson("/api/notes/project/" + encodeURIComponent(projectId), {
+        callout: sharedNotes.projectCallouts[projectId] || "",
+        blocker: sharedNotes.projectBlockers[projectId] || ""
+      }).catch(function(e){ console.error(e); });
+    }, 500);
+  }
+
+  function renderPodsOverview(){
+    var container = document.getElementById("podsOverview");
+    var openIds = getOpenIds(container);
+    container.innerHTML = "";
+    var data = snapshot && snapshot.podsOverview;
+    if (!data){ container.appendChild(el("div", "empty", data === null ? "No pull yet — click \"Pull latest data\" above." : "Loading…")); return; }
+    var period = currentData();
+    var pendingAutogrow = [];
+    data.pods.forEach(function(podEntry){
+      var visibleProjects = favSort(
+        podEntry.projects.filter(function(pr){ return uiState.hiddenProjectIds.indexOf(pr.id) === -1; }),
+        function(pr){ return pr.id; }
+      );
+      var podDetails = el("details", "pod-group");
+      podDetails.dataset.id = "pod:" + podEntry.pod;
+      if (openIds[podDetails.dataset.id]) podDetails.open = true;
+      podDetails.appendChild(el("summary", null, "<span class=\"row-name\">" + podEntry.pod + "</span><span class=\"row-right\"><span class=\"chev\">▸</span></span>"));
+      podDetails.addEventListener("toggle", function(){
+        if (podDetails.open) podDetails.querySelectorAll("textarea.pod-update").forEach(autoGrowTextarea);
+      });
+      var body = el("div", "pod-body");
+      if (!visibleProjects.length){ body.appendChild(el("div", "empty", "No active/completed projects.")); }
+      visibleProjects.forEach(function(pr){
+        var prDetails = el("details", "pod-group nested-project" + (isFavorite(pr.id) ? " favorited" : ""));
+        prDetails.dataset.id = pr.id;
+        if (openIds[pr.id]) prDetails.open = true;
+        prDetails.addEventListener("toggle", function(){
+          if (prDetails.open) prDetails.querySelectorAll("textarea.pod-update").forEach(autoGrowTextarea);
+        });
+        var summary = el("summary", null, "<span class=\"row-name\">" + escapeHtml(pr.name) + "</span>");
+        var rightWrap = el("span", "row-right",
+          "<span class=\"tag\">" + pr.completedCount + "/" + pr.totalCount + "</span><span class=\"tag " + statusTagClass(pr.statusType) + "\">" + escapeHtml(pr.statusName || "") + "</span>"
+        );
+        rightWrap.insertBefore(favButton(pr.id, renderPodsOverview), rightWrap.firstChild);
+        rightWrap.appendChild(el("span", "chev", "▸"));
+        summary.appendChild(rightWrap);
+        prDetails.appendChild(summary);
+        prDetails.addEventListener("contextmenu", function(ev){
+          ev.preventDefault();
+          if (window.confirm("Remove \"" + pr.name + "\" from this pod view?")) hideProject(pr.id);
+        });
+        var prBody = el("div", "pod-body");
+        var prNotesRow = el("div", "project-notes-row");
+        ["Callouts", "Blockers"].forEach(function(label){
+          var field = label === "Callouts" ? "projectCallouts" : "projectBlockers";
+          var col = el("div", "project-notes-col");
+          col.appendChild(el("div", "pod-update-label", label));
+          var textarea = document.createElement("textarea");
+          textarea.className = "pod-update" + (label === "Callouts" ? " callout-field" : " blocker-field");
+          textarea.placeholder = label + "...";
+          textarea.value = (sharedNotes[field] && sharedNotes[field][pr.id]) || "";
+          textarea.addEventListener("input", function(){
+            sharedNotes[field][pr.id] = textarea.value;
+            scheduleSaveProjectNote(pr.id);
+            autoGrowTextarea(textarea);
+          });
+          col.appendChild(textarea);
+          prNotesRow.appendChild(col);
+          pendingAutogrow.push(textarea);
+        });
+        prBody.appendChild(prNotesRow);
+        if (!pr.issues.length){ prBody.appendChild(el("div", "empty", "No tickets.")); }
+        pr.issues.forEach(function(issue){
+          var row = el("div", "item");
+          var content = el("div", "content");
+          var line1 = el("div", "line1");
+          var a = document.createElement("a"); a.href = issue.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = issue.title;
+          line1.appendChild(a);
+          content.appendChild(line1);
+          content.appendChild(el("div", "badge-row",
+            "<span class=\"tag " + statusTagClass(issue.statusType) + "\">" + escapeHtml(issue.status || "") + "</span>" + nameTag(issue.assignee)
+          ));
+          row.appendChild(content);
+          prBody.appendChild(row);
+        });
+        prDetails.appendChild(prBody);
+        body.appendChild(prDetails);
+      });
+      var otherWrap = el("div", "pod-update-wrap other-notes-wrap");
+      otherWrap.appendChild(el("div", "pod-update-label", "Other notes"));
+      var otherTextarea = document.createElement("textarea");
+      otherTextarea.className = "pod-update";
+      otherTextarea.placeholder = "Anything else for " + podEntry.pod + "...";
+      otherTextarea.value = (sharedNotes.podOtherNotes && sharedNotes.podOtherNotes[podEntry.pod]) || "";
+      otherTextarea.addEventListener("input", function(){
+        sharedNotes.podOtherNotes[podEntry.pod] = otherTextarea.value;
+        scheduleSavePodNote(podEntry.pod);
+        autoGrowTextarea(otherTextarea);
+      });
+      otherWrap.appendChild(otherTextarea);
+      body.appendChild(otherWrap);
+      pendingAutogrow.push(otherTextarea);
+      podDetails.appendChild(body);
+      container.appendChild(podDetails);
+    });
+    pendingAutogrow.forEach(autoGrowTextarea);
+  }
+
+  // ---------- history banner / snapshot picker ----------
+  function renderHistoryBanner(){
+    var banner = document.getElementById("historyBanner");
+    banner.innerHTML = "";
+    if (viewingLatest || !snapshot) return;
+    var div = el("div", "history-banner");
+    div.appendChild(document.createTextNode("Viewing a past pull from " + formatPrettyDate(snapshot.windowStart) + " – " + formatPrettyDate(snapshot.windowEnd) + ". "));
+    var backBtn = document.createElement("button");
+    backBtn.type = "button"; backBtn.className = "link"; backBtn.textContent = "Back to latest";
+    backBtn.addEventListener("click", function(){ loadSnapshot("latest"); });
+    div.appendChild(backBtn);
+    banner.appendChild(div);
+  }
+  function renderSnapshotSelect(){
+    var btn = document.getElementById("snapshotPickerBtn");
+    var panel = document.getElementById("snapshotPickerPanel");
+    if (!snapshotList.length){
+      btn.textContent = "No pulls yet";
+      btn.disabled = true;
+      panel.innerHTML = "";
+      panel.hidden = true;
+      return;
+    }
+    btn.disabled = false;
+    var currentId = snapshot ? snapshot.id : snapshotList[0].id;
+    var currentIdx = snapshotList.findIndex(function(s){ return s.id === currentId; });
+    if (currentIdx === -1) currentIdx = 0;
+    var current = snapshotList[currentIdx];
+    btn.textContent = (currentIdx === 0 ? "Latest — " : "") + current.label;
+
+    panel.innerHTML = "";
+    snapshotList.forEach(function(s, idx){
+      var row = document.createElement("div");
+      row.className = "multi-select-option";
+      row.style.justifyContent = "space-between";
+      var labelSpan = document.createElement("span");
+      labelSpan.style.overflow = "hidden";
+      labelSpan.style.textOverflow = "ellipsis";
+      labelSpan.style.whiteSpace = "nowrap";
+      labelSpan.style.flex = "1 1 auto";
+      labelSpan.style.minWidth = "0";
+      labelSpan.textContent = (idx === 0 ? "Latest — " : "") + s.label + " (" + new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ")";
+      row.appendChild(labelSpan);
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "icon-link";
+      delBtn.title = "Delete this pull";
+      delBtn.style.flexShrink = "0";
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+      delBtn.addEventListener("click", function(ev){ ev.preventDefault(); ev.stopPropagation(); deleteSnapshotById(s.id); });
+      row.appendChild(delBtn);
+      row.addEventListener("click", function(){
+        panel.hidden = true;
+        loadSnapshot(idx === 0 ? "latest" : s.id);
+      });
+      panel.appendChild(row);
+    });
+  }
+  async function deleteSnapshotById(id){
+    var target = snapshotList.find(function(s){ return s.id === id; });
+    var label = target ? target.label : id;
+    if (!window.confirm("Delete this pull (\"" + label + "\")? This can't be undone.")) return;
+    try {
+      await delJson("/api/snapshots/" + id);
+      await refreshSnapshotList();
+      if (snapshotList.length) await loadSnapshot(snapshotList[0].id);
+      else { snapshot = null; render(); }
+    } catch(e){ console.error("Failed to delete snapshot", e); window.alert("Couldn't delete that pull — try again."); }
+  }
+
+  // ---------- config warning ----------
+  function renderConfigWarning(health){
+    var box = document.getElementById("configWarning");
+    box.innerHTML = "";
+    if (!health || (health.linearConfigured && health.slackConfigured)) return;
+    var missing = [];
+    if (!health.linearConfigured) missing.push("LINEAR_API_KEY");
+    if (!health.slackConfigured) missing.push("SLACK_BOT_TOKEN");
+    box.appendChild(el("div", "config-warning",
+      "This server is missing " + missing.join(" and ") + " — set them as environment variables and redeploy before pulling data. Everything else (notes, callouts, blockers, history browsing) still works."
+    ));
+  }
+
+  // ---------- top-level render ----------
+  function render(){
+    var p = currentData();
+    updateWindowLabel(p);
+    renderCalloutsTop();
+    renderBlockersTop();
+    renderHistoryBanner();
+    renderSnapshotSelect();
+    if (!p.lastRefreshed){
+      document.getElementById("kpiReleases").textContent = "–";
+      document.getElementById("kpiCompleted").textContent = "–";
+      document.getElementById("kpiIdeas").textContent = "–";
+      document.getElementById("kpiTriage").textContent = "–";
+      document.getElementById("releasesCardCnt").textContent = "";
+      document.getElementById("productIdeasCardCnt").textContent = "";
+      document.getElementById("triageCardCnt").textContent = "";
+      var placeholder = "No pull yet — pick dates above and click \"Create new\".";
+      renderEmptyContainer("podsOverview", placeholder);
+      renderEmptyContainer("releasesList", placeholder);
+      renderEmptyContainer("productIdeasList", placeholder);
+      renderEmptyContainer("triageList", placeholder);
+      setStatus("Not loaded", false, placeholder);
+      return;
+    }
+    document.getElementById("kpiReleases").textContent = p.releaseCount || 0;
+    document.getElementById("kpiCompleted").textContent = p.completedCount || 0;
+    document.getElementById("kpiIdeas").textContent = (p.productIdeaItems ? p.productIdeaItems.length : 0);
+    document.getElementById("kpiTriage").textContent = (p.triageItems ? p.triageItems.length : 0);
+    document.getElementById("releasesCardCnt").textContent = (p.releaseItems ? p.releaseItems.length : 0) + " release(s)";
+    renderPodsOverview();
+    renderSlackEntries("releasesList", p.releaseItems, "No releases in this window.", { linkTitleToSlack: true });
+    renderProductIdeas();
+    renderTriageSection();
+    setStatus(formatRelativeTime(snapshot.createdAt), false, "Pulled " + formatRelativeTime(snapshot.createdAt) + " — " + (snapshot.label || ""));
+  }
+
+  // ---------- loading snapshots ----------
+  async function loadSnapshot(id){
+    try {
+      var json = id === "latest" ? await getJson("/api/snapshots/latest") : await getJson("/api/snapshots/" + id);
+      snapshot = json.snapshot;
+      viewingLatest = (id === "latest") || (snapshotList[0] && snapshot && snapshotList[0].id === snapshot.id);
+      render();
+    } catch(e){ console.error("Failed to load snapshot", e); }
+  }
+  async function refreshSnapshotList(){
+    try {
+      var json = await getJson("/api/snapshots");
+      snapshotList = json.snapshots || [];
+    } catch(e){ console.error("Failed to load snapshot list", e); }
+  }
+
+  // ---------- pull workflow ----------
+  var pullPollTimer = null;
+  function setPullControlsEnabled(enabled){
+    document.getElementById("pullBtn").disabled = !enabled;
+  }
+  async function startPull(){
+    var windowStart = document.getElementById("pullStart").value;
+    var windowEnd = document.getElementById("pullEnd").value;
+    if (!windowStart || !windowEnd){ window.alert("Pick a start and end date first."); return; }
+    setPullControlsEnabled(false);
+    setStatus('<span class="spinner"></span>Starting…', false, "Starting pull…");
+    try {
+      var res = await postJson("/api/pull", { windowStart: windowStart, windowEnd: windowEnd });
+      if (res.error){
+        setStatus("Failed", true, res.error);
+        setPullControlsEnabled(true);
+        return;
+      }
+      pollPullStatus();
+    } catch(e){
+      setStatus("Failed", true, String(e));
+      setPullControlsEnabled(true);
+    }
+  }
+  async function pollPullStatus(){
+    clearTimeout(pullPollTimer);
+    try {
+      var job = await getJson("/api/pull/status");
+      if (job.status === "running"){
+        setStatus('<span class="spinner"></span>' + escapeHtml(job.phase || "Working…"), false, job.phase);
+        pullPollTimer = setTimeout(pollPullStatus, 1500);
+        return;
+      }
+      if (job.status === "done"){
+        await refreshSnapshotList();
+        await loadSnapshot(job.snapshotId);
+        setPullControlsEnabled(true);
+        return;
+      }
+      if (job.status === "error"){
+        setStatus("Failed", true, job.error || "Pull failed");
+        setPullControlsEnabled(true);
+        return;
+      }
+      setPullControlsEnabled(true);
+    } catch(e){
+      setStatus("Failed", true, String(e));
+      setPullControlsEnabled(true);
+    }
+  }
+
+  // ---------- notes polling (picks up other people's edits) ----------
+  function anyNoteFieldFocused(){
+    var a = document.activeElement;
+    if (!a) return false;
+    return a.classList && (a.classList.contains("note-title-input") || a.classList.contains("release-body") || a.classList.contains("pod-update"));
+  }
+  async function pollNotes(){
+    try {
+      if (!anyNoteFieldFocused()){
+        var json = await getJson("/api/notes");
+        sharedNotes = json.notes;
+        favorites = json.favorites || {};
+        render();
+      }
+    } catch(e){ console.error("Failed to poll notes", e); }
+    setTimeout(pollNotes, 15000);
+  }
+
+  // ---------- event wiring ----------
+  document.addEventListener("click", function(){
+    var triagePanel = document.getElementById("triagePersonFilterPanel");
+    if (triagePanel) triagePanel.hidden = true;
+    var snapshotPanel = document.getElementById("snapshotPickerPanel");
+    if (snapshotPanel) snapshotPanel.hidden = true;
+  });
+  document.getElementById("ideaFilterToggle").addEventListener("click", function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    if (uiState.productIdeaFilter.person){ uiState.productIdeaFilter.person = null; uiState.productIdeaFilter.open = false; }
+    else { uiState.productIdeaFilter.open = !uiState.productIdeaFilter.open; }
+    saveUiState(); renderProductIdeas();
+  });
+  document.getElementById("ideaPersonFilter").addEventListener("click", function(ev){ ev.stopPropagation(); });
+  document.getElementById("ideaPersonFilter").addEventListener("change", function(){
+    uiState.productIdeaFilter.person = this.value || null; saveUiState(); renderProductIdeas();
+  });
+  document.getElementById("triageFilterToggle").addEventListener("click", function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    if (uiState.triageFilter.people && uiState.triageFilter.people.length){ uiState.triageFilter.people = []; uiState.triageFilter.open = false; }
+    else { uiState.triageFilter.open = !uiState.triageFilter.open; }
+    saveUiState(); renderTriageSection();
+  });
+  document.getElementById("triagePersonFilterBtn").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    var panel = document.getElementById("triagePersonFilterPanel");
+    panel.hidden = !panel.hidden;
+  });
+  document.getElementById("triagePersonFilterPanel").addEventListener("click", function(ev){ ev.stopPropagation(); });
+  document.getElementById("addCalloutBtn").addEventListener("click", function(){ addTopNote("callouts"); });
+  document.getElementById("addBlockerBtn").addEventListener("click", function(){ addTopNote("blockers"); });
+  document.getElementById("pullBtn").addEventListener("click", startPull);
+  document.getElementById("snapshotPickerBtn").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    var panel = document.getElementById("snapshotPickerPanel");
+    panel.hidden = !panel.hidden;
+  });
+  document.getElementById("snapshotPickerPanel").addEventListener("click", function(ev){ ev.stopPropagation(); });
+
+  // ---------- init ----------
+  async function init(){
+    var health = await getJson("/api/health").catch(function(){ return null; });
+    renderConfigWarning(health);
+
+    var notesJson = await getJson("/api/notes").catch(function(){ return { notes: sharedNotes, favorites: {} }; });
+    sharedNotes = notesJson.notes;
+    favorites = notesJson.favorites || {};
+
+    await refreshSnapshotList();
+    if (snapshotList.length){
+      await loadSnapshot(snapshotList[0].id);
+    } else {
+      render();
+    }
+    setTimeout(pollNotes, 15000);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
