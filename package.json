@@ -1,0 +1,17 @@
+{
+  "name": "bod-digest-app",
+  "version": "1.0.0",
+  "description": "Hosted, shared BOD Product & Engineering digest — pulls from Linear + Slack, stores every pull historically, and lets the team add live callouts/blockers/notes that save for everyone.",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed-demo": "node scripts/seed-demo.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
