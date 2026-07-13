@@ -54,6 +54,9 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
   }
   .pull-panel label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-right: 2px; }
+  .pull-panel input[type=date] { flex: 1 1 0; min-width: 120px; }
+  .pull-panel button.primary { margin-left: auto; flex: 0 0 auto; }
+  #snapshotPickerBtn { padding-top: 8px; padding-bottom: 8px; font-size: 12.5px; }
   .history-banner {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     background: #FCEFDB; border: 1px solid #F3D9A4; color: #8A5A00; border-radius: var(--radius-sm);
@@ -266,15 +269,16 @@
 
   <div class="controls">
     <span class="status" id="statusLine"></span>
-    <select id="snapshotHistorySelect" title="View a past pull"></select>
+    <div class="multi-select" id="snapshotPickerWrap" style="flex:0 1 320px;">
+      <button type="button" class="multi-select-btn" id="snapshotPickerBtn">No pulls yet</button>
+      <div class="multi-select-panel" id="snapshotPickerPanel" hidden></div>
+    </div>
   </div>
   <div class="pull-panel">
-    <label for="pullStart">Window</label>
     <input type="date" id="pullStart" />
     <span>–</span>
     <input type="date" id="pullEnd" />
-    <input type="text" id="pullLabel" placeholder="Label (optional)" style="flex:1 1 160px;" />
-    <button type="button" class="primary small" id="pullBtn">Pull latest data</button>
+    <button type="button" class="primary" id="pullBtn">Create new</button>
   </div>
   <div id="historyBanner"></div>
 
@@ -349,7 +353,6 @@
     </div>
   </details>
 
-  <footer class="hint">Data is pulled from Linear &amp; Slack whenever anyone clicks "Pull latest data" — every pull is saved permanently and browsable above. Callouts, blockers, and notes save instantly for everyone.</footer>
 </div>
 
 <script>
@@ -971,22 +974,60 @@
     banner.appendChild(div);
   }
   function renderSnapshotSelect(){
-    var sel = document.getElementById("snapshotHistorySelect");
-    sel.innerHTML = "";
+    var btn = document.getElementById("snapshotPickerBtn");
+    var panel = document.getElementById("snapshotPickerPanel");
     if (!snapshotList.length){
-      var opt = document.createElement("option"); opt.textContent = "No pulls yet"; opt.value = "";
-      sel.appendChild(opt);
-      sel.disabled = true;
+      btn.textContent = "No pulls yet";
+      btn.disabled = true;
+      panel.innerHTML = "";
+      panel.hidden = true;
       return;
     }
-    sel.disabled = false;
+    btn.disabled = false;
+    var currentId = snapshot ? snapshot.id : snapshotList[0].id;
+    var currentIdx = snapshotList.findIndex(function(s){ return s.id === currentId; });
+    if (currentIdx === -1) currentIdx = 0;
+    var current = snapshotList[currentIdx];
+    btn.textContent = (currentIdx === 0 ? "Latest — " : "") + current.label;
+
+    panel.innerHTML = "";
     snapshotList.forEach(function(s, idx){
-      var opt = document.createElement("option");
-      opt.value = s.id;
-      opt.textContent = (idx === 0 ? "Latest — " : "") + s.label + " (" + new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ")";
-      sel.appendChild(opt);
+      var row = document.createElement("div");
+      row.className = "multi-select-option";
+      row.style.justifyContent = "space-between";
+      var labelSpan = document.createElement("span");
+      labelSpan.style.overflow = "hidden";
+      labelSpan.style.textOverflow = "ellipsis";
+      labelSpan.style.whiteSpace = "nowrap";
+      labelSpan.style.flex = "1 1 auto";
+      labelSpan.style.minWidth = "0";
+      labelSpan.textContent = (idx === 0 ? "Latest — " : "") + s.label + " (" + new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + ")";
+      row.appendChild(labelSpan);
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "icon-link";
+      delBtn.title = "Delete this pull";
+      delBtn.style.flexShrink = "0";
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+      delBtn.addEventListener("click", function(ev){ ev.preventDefault(); ev.stopPropagation(); deleteSnapshotById(s.id); });
+      row.appendChild(delBtn);
+      row.addEventListener("click", function(){
+        panel.hidden = true;
+        loadSnapshot(idx === 0 ? "latest" : s.id);
+      });
+      panel.appendChild(row);
     });
-    sel.value = snapshot ? snapshot.id : (snapshotList[0] && snapshotList[0].id) || "";
+  }
+  async function deleteSnapshotById(id){
+    var target = snapshotList.find(function(s){ return s.id === id; });
+    var label = target ? target.label : id;
+    if (!window.confirm("Delete this pull (\"" + label + "\")? This can't be undone.")) return;
+    try {
+      await delJson("/api/snapshots/" + id);
+      await refreshSnapshotList();
+      if (snapshotList.length) await loadSnapshot(snapshotList[0].id);
+      else { snapshot = null; render(); }
+    } catch(e){ console.error("Failed to delete snapshot", e); window.alert("Couldn't delete that pull — try again."); }
   }
 
   // ---------- config warning ----------
@@ -1018,7 +1059,7 @@
       document.getElementById("releasesCardCnt").textContent = "";
       document.getElementById("productIdeasCardCnt").textContent = "";
       document.getElementById("triageCardCnt").textContent = "";
-      var placeholder = "No pull yet — set the date window above and click \"Pull latest data\".";
+      var placeholder = "No pull yet — pick dates above and click \"Create new\".";
       renderEmptyContainer("podsOverview", placeholder);
       renderEmptyContainer("releasesList", placeholder);
       renderEmptyContainer("productIdeasList", placeholder);
@@ -1062,12 +1103,11 @@
   async function startPull(){
     var windowStart = document.getElementById("pullStart").value;
     var windowEnd = document.getElementById("pullEnd").value;
-    var label = document.getElementById("pullLabel").value;
     if (!windowStart || !windowEnd){ window.alert("Pick a start and end date first."); return; }
     setPullControlsEnabled(false);
     setStatus('<span class="spinner"></span>Starting…', false, "Starting pull…");
     try {
-      var res = await postJson("/api/pull", { windowStart: windowStart, windowEnd: windowEnd, label: label });
+      var res = await postJson("/api/pull", { windowStart: windowStart, windowEnd: windowEnd });
       if (res.error){
         setStatus("Failed", true, res.error);
         setPullControlsEnabled(true);
@@ -1128,6 +1168,8 @@
   document.addEventListener("click", function(){
     var triagePanel = document.getElementById("triagePersonFilterPanel");
     if (triagePanel) triagePanel.hidden = true;
+    var snapshotPanel = document.getElementById("snapshotPickerPanel");
+    if (snapshotPanel) snapshotPanel.hidden = true;
   });
   document.getElementById("ideaFilterToggle").addEventListener("click", function(ev){
     ev.preventDefault(); ev.stopPropagation();
@@ -1154,25 +1196,15 @@
   document.getElementById("addCalloutBtn").addEventListener("click", function(){ addTopNote("callouts"); });
   document.getElementById("addBlockerBtn").addEventListener("click", function(){ addTopNote("blockers"); });
   document.getElementById("pullBtn").addEventListener("click", startPull);
-  document.getElementById("snapshotHistorySelect").addEventListener("change", function(){
-    var id = this.value;
-    if (!id) return;
-    loadSnapshot(id === (snapshotList[0] && snapshotList[0].id) ? "latest" : id);
+  document.getElementById("snapshotPickerBtn").addEventListener("click", function(ev){
+    ev.stopPropagation();
+    var panel = document.getElementById("snapshotPickerPanel");
+    panel.hidden = !panel.hidden;
   });
-
-  function defaultPullWindow(){
-    var end = new Date();
-    var start = new Date(end.getTime() - 7 * 24 * 3600 * 1000);
-    function fmt(d){ return d.toISOString().slice(0, 10); }
-    return { start: fmt(start), end: fmt(end) };
-  }
+  document.getElementById("snapshotPickerPanel").addEventListener("click", function(ev){ ev.stopPropagation(); });
 
   // ---------- init ----------
   async function init(){
-    var w = defaultPullWindow();
-    document.getElementById("pullStart").value = w.start;
-    document.getElementById("pullEnd").value = w.end;
-
     var health = await getJson("/api/health").catch(function(){ return null; });
     renderConfigWarning(health);
 
