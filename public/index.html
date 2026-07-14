@@ -294,6 +294,7 @@
     <div class="card-content">
       <p class="pod-hint">Callouts, blockers, and notes here save to this app's database for everyone — no Slack, no per-device state.</p>
       <div id="podsOverview"></div>
+      <div id="hiddenProjectsManager" style="margin-top: 10px;"></div>
     </div>
   </details>
 
@@ -373,7 +374,7 @@
     } catch(e){}
     return {};
   }
-  var uiState = Object.assign({ hiddenProjectIds: [], slackEdits: {}, productIdeaFilter: { open: false, person: null }, triageFilter: { open: false, people: [] } }, loadUiState());
+  var uiState = Object.assign({ slackEdits: {}, productIdeaFilter: { open: false, person: null }, triageFilter: { open: false, people: [] } }, loadUiState());
   if (!Array.isArray(uiState.triageFilter.people)) uiState.triageFilter.people = [];
   function saveUiState(){ localStorage.setItem(UI_STATE_KEY, JSON.stringify(uiState)); }
 
@@ -383,6 +384,7 @@
   var viewingLatest = true;
   var sharedNotes = { calloutsTop: [], blockersTop: [], podOtherNotes: {}, projectCallouts: {}, projectBlockers: {} };
   var favorites = {};
+  var hiddenProjects = {}; // shared for everyone, like favorites — not a per-browser preference
 
   function currentData(){ return (snapshot && snapshot.data) || blankData(); }
   function blankData(){ return { lastRefreshed: null, windowStart: null, windowEnd: null, releaseItems: [], releaseCount: 0, completedCount: 0, triageItems: [], triageThemes: null, productIdeaItems: [] }; }
@@ -759,9 +761,12 @@
     document.getElementById("productIdeasCardCnt").textContent = filtered.length + (activePerson ? " of " + items.length : "") + " idea(s)";
   }
 
-  function hideProject(projectId){
-    if (uiState.hiddenProjectIds.indexOf(projectId) === -1) uiState.hiddenProjectIds.push(projectId);
-    saveUiState();
+  // Hiding a project is shared for everyone (like favorites) — not a per-browser preference.
+  async function toggleHiddenProject(projectId){
+    try {
+      var res = await postJson("/api/hidden-projects/" + encodeURIComponent(projectId) + "/toggle", {});
+      if (res.hidden) hiddenProjects[projectId] = true; else delete hiddenProjects[projectId];
+    } catch(e){ console.error("Failed to toggle hidden project", e); }
     renderPodsOverview();
   }
   function autoGrowTextarea(ta){ ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
@@ -870,9 +875,13 @@
     if (!data){ container.appendChild(el("div", "empty", data === null ? "No pull yet — click \"Pull latest data\" above." : "Loading…")); return; }
     var period = currentData();
     var pendingAutogrow = [];
+    var hiddenList = [];
     data.pods.forEach(function(podEntry){
+      podEntry.projects.forEach(function(pr){
+        if (hiddenProjects[pr.id]) hiddenList.push({ id: pr.id, name: pr.name, pod: podEntry.pod });
+      });
       var visibleProjects = favSort(
-        podEntry.projects.filter(function(pr){ return uiState.hiddenProjectIds.indexOf(pr.id) === -1; }),
+        podEntry.projects.filter(function(pr){ return !hiddenProjects[pr.id]; }),
         function(pr){ return pr.id; }
       );
       var podDetails = el("details", "pod-group");
@@ -901,7 +910,7 @@
         prDetails.appendChild(summary);
         prDetails.addEventListener("contextmenu", function(ev){
           ev.preventDefault();
-          if (window.confirm("Remove \"" + pr.name + "\" from this pod view?")) hideProject(pr.id);
+          if (window.confirm("Remove \"" + pr.name + "\" from this pod view for everyone? You can bring it back later from \"Hidden projects\" below.")) toggleHiddenProject(pr.id);
         });
         var prBody = el("div", "pod-body");
         var prNotesRow = el("div", "project-notes-row");
@@ -958,6 +967,33 @@
       container.appendChild(podDetails);
     });
     pendingAutogrow.forEach(autoGrowTextarea);
+    renderHiddenProjectsManager(hiddenList);
+  }
+
+  // Hiding is shared/permanent now, so give everyone a way to see what's hidden and bring it back.
+  function renderHiddenProjectsManager(hiddenList){
+    var wrap = document.getElementById("hiddenProjectsManager");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    if (!hiddenList.length) return;
+    var details = el("details", "pod-group");
+    details.appendChild(el("summary", null, "<span class=\"row-name\">Hidden projects (" + hiddenList.length + ")</span><span class=\"row-right\"><span class=\"chev\">▸</span></span>"));
+    var body = el("div", "pod-body");
+    hiddenList.forEach(function(h){
+      var row = el("div", "item");
+      var content = el("div", "content");
+      content.appendChild(el("div", "line1", escapeHtml(h.name) + " " + nameTag(h.pod)));
+      row.appendChild(content);
+      var unhideBtn = document.createElement("button");
+      unhideBtn.type = "button";
+      unhideBtn.className = "ghost small";
+      unhideBtn.textContent = "Unhide";
+      unhideBtn.addEventListener("click", function(){ toggleHiddenProject(h.id); });
+      row.appendChild(unhideBtn);
+      body.appendChild(row);
+    });
+    details.appendChild(body);
+    wrap.appendChild(details);
   }
 
   // ---------- history banner / snapshot picker ----------
@@ -1158,6 +1194,7 @@
         var json = await getJson("/api/notes");
         sharedNotes = json.notes;
         favorites = json.favorites || {};
+        hiddenProjects = json.hiddenProjects || {};
         render();
       }
     } catch(e){ console.error("Failed to poll notes", e); }
@@ -1208,9 +1245,10 @@
     var health = await getJson("/api/health").catch(function(){ return null; });
     renderConfigWarning(health);
 
-    var notesJson = await getJson("/api/notes").catch(function(){ return { notes: sharedNotes, favorites: {} }; });
+    var notesJson = await getJson("/api/notes").catch(function(){ return { notes: sharedNotes, favorites: {}, hiddenProjects: {} }; });
     sharedNotes = notesJson.notes;
     favorites = notesJson.favorites || {};
+    hiddenProjects = notesJson.hiddenProjects || {};
 
     await refreshSnapshotList();
     if (snapshotList.length){
