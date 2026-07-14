@@ -35,7 +35,8 @@ function defaultDb() {
       projectCallouts: {},
       projectBlockers: {}
     },
-    favorites: {}
+    favorites: {},
+    hiddenProjects: {}
   };
 }
 
@@ -65,7 +66,8 @@ function load() {
         projectCallouts: Object.assign({}, (parsed.notes && parsed.notes.projectCallouts) || {}),
         projectBlockers: Object.assign({}, (parsed.notes && parsed.notes.projectBlockers) || {})
       },
-      favorites: Object.assign({}, parsed.favorites || {})
+      favorites: Object.assign({}, parsed.favorites || {}),
+      hiddenProjects: Object.assign({}, parsed.hiddenProjects || {})
     };
   } catch (e) {
     console.error("Failed to read db.json, starting fresh:", e.message);

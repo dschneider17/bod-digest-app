@@ -97,7 +97,7 @@ app.post("/api/pull", async (req, res) => {
 // ---------- Notes (callouts / blockers / pod notes / project notes) ----------
 app.get("/api/notes", (req, res) => {
   const state = db.getState();
-  res.json({ notes: state.notes, favorites: state.favorites });
+  res.json({ notes: state.notes, favorites: state.favorites, hiddenProjects: state.hiddenProjects });
 });
 
 function topList(kind) {
@@ -160,6 +160,15 @@ app.post("/api/favorites/:itemId/toggle", async (req, res) => {
   if (state.favorites[id]) delete state.favorites[id]; else state.favorites[id] = true;
   await db.flush();
   res.json({ favorited: !!state.favorites[id] });
+});
+
+// Hiding a project is shared for everyone (like favorites) — not a per-browser preference.
+app.post("/api/hidden-projects/:projectId/toggle", async (req, res) => {
+  const state = db.getState();
+  const id = req.params.projectId;
+  if (state.hiddenProjects[id]) delete state.hiddenProjects[id]; else state.hiddenProjects[id] = true;
+  await db.flush();
+  res.json({ hidden: !!state.hiddenProjects[id] });
 });
 
 // Diagnostic only — shows the last few raw Slack messages from either channel plus what the
